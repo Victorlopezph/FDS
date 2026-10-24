@@ -1,7 +1,8 @@
 import { getState, saveState } from '@/lib/store';
 import { applyAgentResult, contextFor, viewFor, projectView, addChat } from '@/lib/logic';
 import { getSessionUser, unauthorized } from '@/lib/auth';
-import { claude, parseJSON, hoy } from '@/lib/claude';
+import { claude, parseJSON, hoy, aiConfigured } from '@/lib/claude';
+import { offlineAnalyze } from '@/lib/offline';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -49,24 +50,33 @@ export async function POST(req) {
     if (!snapshot) return Response.json({ error: 'No tenés acceso a ese proyecto.' }, { status: 403 });
     const autor = snapshot.members.find((m) => m.id === me);
 
-    const raw = await claude({
-      system: SYSTEM,
-      maxTokens: 2000,
-      messages: [{
-        role: 'user',
-        content: `Hoy es ${hoy()}.\nProyecto de este chat y su equipo:\n${contextFor(snapshot)}\n\nLo cuenta ${autor ? `${autor.name} (id ${autor.id})` : 'alguien del equipo'}:\n"""${text}"""`,
-      }],
-    });
-
-    const result = parseJSON(raw);
+    // Con IA si hay una configurada; si no (o si falla), modo sin IA por reglas.
+    let result, mode = 'ia';
+    if (aiConfigured()) {
+      try {
+        const raw = await claude({
+          req,
+          system: SYSTEM,
+          maxTokens: 2000,
+          messages: [{
+            role: 'user',
+            content: `Hoy es ${hoy()}.\nProyecto de este chat y su equipo:\n${contextFor(snapshot)}\n\nLo cuenta ${autor ? `${autor.name} (id ${autor.id})` : 'alguien del equipo'}:\n"""${text}"""`,
+          }],
+        });
+        result = parseJSON(raw);
+      } catch (e) {
+        console.error('IA no disponible, uso modo sin IA:', e.message);
+      }
+    }
+    if (!result) { result = offlineAnalyze(snapshot, text, me); mode = 'local'; }
     const resumen = result.resumen || 'Listo, actualicé el tablero.';
     // La IA tarda unos segundos: releemos el estado para no pisar lo que otros cambiaron mientras tanto.
     const state = await getState();
     applyAgentResult(state, result, me, projectId);
     addChat(state, projectId, { role: 'user', authorId: me, content: text.trim(), tag: 'avance' });
-    addChat(state, projectId, { role: 'assistant', content: resumen, tag: 'tablero' });
+    addChat(state, projectId, { role: 'assistant', content: resumen, tag: 'tablero', mode });
     await saveState(state);
-    return Response.json({ resumen, state: viewFor(state, me) });
+    return Response.json({ resumen, mode, state: viewFor(state, me) });
   } catch (e) {
     console.error(e); // aparece en los logs de Vercel
     return Response.json({ error: e.message }, { status: 500 });
