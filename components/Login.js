@@ -62,6 +62,9 @@ export default function Login({ google, guest, inviting, onGuest }) {
           {!google && <p className="small" style={{ textAlign: 'center' }}>El login con Google se activa cuando se configuran sus credenciales.</p>}
         </form>
       )}
+      <p className="small" style={{ textAlign: 'center', marginTop: 8 }}>
+        <a className="link" href="/privacidad">Privacidad</a> · <a className="link" href="/terminos">Condiciones</a>
+      </p>
     </div>
   );
 }
