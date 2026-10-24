@@ -81,6 +81,11 @@ export default function ProjectChat({ project, state, me, onState }) {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Algo falló');
+      if (data.status === 'processing') {
+        setError(data.error || 'El análisis sigue en curso. Reintentá en unos segundos.');
+        setText(content);
+        return;
+      }
       onState(data.state);
       if (mode === 'analyze') retryMessage.current = null;
       speechUsed.current = false;
@@ -100,7 +105,7 @@ export default function ProjectChat({ project, state, me, onState }) {
       const res = await fetch('/api/analyze/confirm', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ projectId: project.id, analysisId }),
+        body: JSON.stringify({ projectId: project.id, analysisId, messageId: analyses.find((item) => item.id === analysisId)?.messageId }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'No se pudo confirmar el cambio.');
@@ -157,9 +162,25 @@ export default function ProjectChat({ project, state, me, onState }) {
                       </details>
                     )}
                     {pendingChanges.length > 0 && (
-                      <button className="btn soft analysis-confirm" disabled={!!confirming} onClick={() => confirmRegression(analysis.id)}>
-                        {confirming === analysis.id ? 'Confirmando…' : 'Confirmar regresión'}
-                      </button>
+                      <div id={`confirmation-${analysis.id}`} className="analysis-pending-summary">
+                        <p>Revisá los cambios propuestos antes de confirmar:</p>
+                        <ul>
+                          {pendingChanges.map((change) => (
+                            <li key={`${change.taskId}-confirmation`}>
+                              <b>{state.tasks.find((task) => task.id === change.taskId)?.title || 'Tarea'}</b>: {change.before.progress}% ({change.before.status}) → {change.proposedProgress}% ({change.proposedStatus}).
+                              <span>{` Evidencia: “${change.evidence}”. ${change.reason}`}</span>
+                            </li>
+                          ))}
+                        </ul>
+                        <button
+                          className="btn soft analysis-confirm"
+                          disabled={!!confirming}
+                          aria-describedby={`confirmation-${analysis.id}`}
+                          onClick={() => confirmRegression(analysis.id)}
+                        >
+                          {confirming === analysis.id ? 'Confirmando…' : 'Confirmar regresión'}
+                        </button>
+                      </div>
                     )}
                   </section>
                 )}
@@ -177,21 +198,23 @@ export default function ProjectChat({ project, state, me, onState }) {
             </div>
           </div>
         )}
-        {busy && <div className="msg assistant"><span className="typing"><i /><i /><i /></span></div>}
-        {error && <div className="error">{error}</div>}
+        {busy && <div className="msg assistant" role="status" aria-live="polite">Analizando el avance… <span className="typing"><i /><i /><i /></span></div>}
+        {speech.listening && <p className="sr-only" role="status" aria-live="polite">Dictado en español argentino activo.</p>}
+        {error && <div className="error" role="alert">{error}</div>}
         <div ref={endRef} />
       </div>
 
       <div className="composer">
         <div className="composer-inner">
           <textarea
+            aria-label="Mensaje del chat o descripción del avance"
             rows={2}
             placeholder={speech.listening ? 'Te escucho…' : 'Ej: “Terminé el login, me trabé con los pagos y el viernes no puedo venir”'}
             value={text}
             onChange={(e) => { speechUsed.current = false; setText(e.target.value); }}
           />
           <div className="composer-actions">
-            <button className={`mic ${speech.listening ? 'rec' : ''}`} onClick={toggleMic} aria-label="Grabar audio">
+            <button className={`mic ${speech.listening ? 'rec' : ''}`} onClick={toggleMic} aria-label={speech.listening ? 'Detener dictado' : 'Iniciar dictado'} aria-pressed={speech.listening}>
               <Icon name={speech.listening ? 'stop' : 'mic'} size={22} />
             </button>
             <button className="btn primary" disabled={busy || !text.trim()} onClick={() => send('analyze')}>Registrar avance</button>

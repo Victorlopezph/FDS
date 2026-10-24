@@ -1,4 +1,4 @@
-import { getState, saveState } from '@/lib/store';
+import { getState, mutateState } from '@/lib/store';
 import { contextFor, viewFor, projectView, addChat } from '@/lib/logic';
 import { getSessionUser, unauthorized } from '@/lib/auth';
 import { claude, hoy, aiConfigured } from '@/lib/claude';
@@ -47,18 +47,21 @@ ${contextFor(pv)}`;
           messages: [...history, { role: 'user', content: `${nameOf(me)}: ${content}` }],
         });
       } catch (e) {
-        console.error('IA no disponible, uso modo sin IA:', e.message);
+        console.error('[team-lab-chat-provider]', e?.name || 'Error');
       }
     }
     if (!reply) { reply = offlineChat(pv, content, me); mode = 'local'; }
 
-    const state = await getState();
-    addChat(state, projectId, { role: 'user', authorId: me, content });
-    addChat(state, projectId, { role: 'assistant', content: reply, mode });
-    await saveState(state);
+    const { state, result } = await mutateState((current) => {
+      if (!projectView(current, me, projectId)) return { error: true };
+      addChat(current, projectId, { role: 'user', authorId: me, content });
+      addChat(current, projectId, { role: 'assistant', content: reply, mode });
+      return null;
+    });
+    if (result?.error) return Response.json({ error: 'No tenés acceso a ese proyecto.' }, { status: 403 });
     return Response.json({ reply, mode, state: viewFor(state, me) });
-  } catch (e) {
-    console.error(e); // aparece en los logs de Vercel
-    return Response.json({ error: e.message }, { status: 500 });
+  } catch (error) {
+    console.error('[team-lab-chat]', error?.name || 'Error');
+    return Response.json({ error: 'No se pudo procesar el mensaje. Probá de nuevo.' }, { status: 500 });
   }
 }

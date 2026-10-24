@@ -1,10 +1,11 @@
-import { googleEnabled, originOf, randomToken, cookie } from '@/lib/auth';
+import { authConfigurationReady, googleEnabled, originOf, randomToken, cookie } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
 // Paso 1: mandar al usuario a la pantalla de Google.
 export async function GET(req) {
   const origin = originOf(req);
+  if (!authConfigurationReady()) return Response.redirect(`${origin}/?error=auth_config`, 302);
   if (!googleEnabled()) return Response.redirect(`${origin}/?error=google_off`, 302);
   const state = randomToken();
   const params = new URLSearchParams({

@@ -40,8 +40,8 @@ export default function TaskSheet({ task, project, members, me, tasks = [], onCl
           <button type="button" className="icon-btn" onClick={onClose} aria-label="Cerrar"><Icon name="close" /></button>
         </div>
 
-        <label className="label">¿Qué hay que hacer?</label>
-        <input className="field" autoFocus={!editing} placeholder="Ej: Diseñar la pantalla de pagos" value={title} onChange={(e) => setTitle(e.target.value)} maxLength={120} />
+        <label className="label" htmlFor="task-title">¿Qué hay que hacer?</label>
+        <input id="task-title" className="field" autoFocus={!editing} placeholder="Ej: Diseñar la pantalla de pagos" value={title} onChange={(e) => setTitle(e.target.value)} maxLength={120} />
 
         <label className="label">Responsable</label>
         {suggestion && suggestion.member.id !== assignee && (
@@ -67,14 +67,24 @@ export default function TaskSheet({ task, project, members, me, tasks = [], onCl
         <label className="label">Estado</label>
         <div className="seg">
           {Object.entries(TASK_STATUS).map(([id, s]) => (
-            <button type="button" key={id} className={status === id ? `on c-${s.c}` : ''} onClick={() => { setStatus(id); if (id === 'hecho') setProgress(100); else if (id === 'pendiente') setProgress(0); else if (progress >= 100) setProgress(0); }}>{s.label}</button>
+            <button type="button" key={id} className={status === id ? `on c-${s.c}` : ''} aria-pressed={status === id} onClick={() => {
+              if (id === 'pendiente' && Number(progress) > 0 && Number(progress) < 100) {
+                setError('La tarea conserva un avance parcial. Bajalo a 0 % antes de marcarla pendiente.');
+                return;
+              }
+              setError('');
+              setStatus(id);
+              if (id === 'hecho') setProgress(100);
+              else if (id === 'pendiente') setProgress(0);
+              else if (progress >= 100) setProgress(0);
+            }}>{s.label}</button>
           ))}
         </div>
 
         <label className="label">Prioridad</label>
         <div className="seg">
           {Object.entries(PRIORITY).map(([id, p]) => (
-            <button type="button" key={id} className={priority === id ? `on c-${p.c}` : ''} onClick={() => setPriority(id)}>{p.label}</button>
+            <button type="button" key={id} className={priority === id ? `on c-${p.c}` : ''} aria-pressed={priority === id} onClick={() => setPriority(id)}>{p.label}</button>
           ))}
         </div>
 
@@ -93,7 +103,7 @@ export default function TaskSheet({ task, project, members, me, tasks = [], onCl
           <input type="checkbox" checked={noDate} onChange={(e) => setNoDate(e.target.checked)} /> Sin fecha
         </label>
 
-        {error && <div className="error mt">{error}</div>}
+        {error && <div className="error mt" role="alert">{error}</div>}
         <button className="btn primary" style={{ width: '100%', marginTop: 16 }} disabled={busy || !title.trim()}>
           {editing ? 'Guardar' : 'Crear tarea'}
         </button>
