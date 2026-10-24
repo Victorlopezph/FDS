@@ -10,6 +10,8 @@ export default function TaskSheet({ task, project, members, me, tasks = [], onCl
   const [assignee, setAssignee] = useState(task ? task.assignee || '' : me);
   const [status, setStatus] = useState(task?.status || 'pendiente');
   const [priority, setPriority] = useState(task?.priority || 'media');
+  const [weight, setWeight] = useState(task?.weight ?? 1);
+  const [progress, setProgress] = useState(task?.progress ?? (task?.status === 'hecho' ? 100 : 0));
   const [noDate, setNoDate] = useState(editing ? !task.deadline : true);
   const [deadline, setDeadline] = useState(task?.deadline || '');
   const [busy, setBusy] = useState(false);
@@ -21,7 +23,8 @@ export default function TaskSheet({ task, project, members, me, tasks = [], onCl
   async function submit(e) {
     e.preventDefault();
     setBusy(true);
-    const err = await onSave({ title, assignee: assignee || null, status, priority, deadline: noDate ? null : deadline || null });
+    const taskProgress = status === 'hecho' ? 100 : status === 'pendiente' ? 0 : Number(progress);
+    const err = await onSave({ title, assignee: assignee || null, status, priority, weight: Number(weight), progress: taskProgress, deadline: noDate ? null : deadline || null });
     setBusy(false);
     if (err) setError(err);
   }
@@ -64,7 +67,7 @@ export default function TaskSheet({ task, project, members, me, tasks = [], onCl
         <label className="label">Estado</label>
         <div className="seg">
           {Object.entries(TASK_STATUS).map(([id, s]) => (
-            <button type="button" key={id} className={status === id ? `on c-${s.c}` : ''} onClick={() => setStatus(id)}>{s.label}</button>
+            <button type="button" key={id} className={status === id ? `on c-${s.c}` : ''} onClick={() => { setStatus(id); if (id === 'hecho') setProgress(100); else if (id === 'pendiente') setProgress(0); else if (progress >= 100) setProgress(0); }}>{s.label}</button>
           ))}
         </div>
 
@@ -74,6 +77,15 @@ export default function TaskSheet({ task, project, members, me, tasks = [], onCl
             <button type="button" key={id} className={priority === id ? `on c-${p.c}` : ''} onClick={() => setPriority(id)}>{p.label}</button>
           ))}
         </div>
+
+        <label className="label" htmlFor="task-weight">Peso en el proyecto</label>
+        <input id="task-weight" className="field" type="number" min="0.1" max="100" step="0.1" value={weight} onChange={(e) => setWeight(e.target.value)} />
+        {(status === 'curso' || status === 'trabado') && (
+          <>
+            <label className="label" htmlFor="task-progress">Avance parcial (%)</label>
+            <input id="task-progress" className="field" type="number" min="0" max="100" step="1" value={progress} onChange={(e) => setProgress(e.target.value)} />
+          </>
+        )}
 
         <label className="label">Fecha límite</label>
         {!noDate && <input className="field" type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} />}
