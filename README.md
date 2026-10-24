@@ -67,7 +67,8 @@ Importante: usen siempre el dominio de producción (`su-app.vercel.app`). Los li
 
 ## Habilidades y asignación
 
-- Cada uno elige sus **habilidades** en **Equipo → Mi perfil** (14 opciones, más las propias que quieran agregar, como "Python" o "Canva").
+- En **Equipo → Mi perfil** cada uno elige su **rol** de un desplegable; según el rol se sugieren **habilidades** (también hay un desplegable con todas y la opción de escribir una propia). El **horario** se elige tocando los días y las horas desde/hasta.
+- Roles y habilidades se editan en `lib/skills.js`.
 - El agente reparte en este orden: **habilidades** que coinciden con la tarea, **horario** disponible antes de la fecha y **menos tareas abiertas**. En el chat explica por qué eligió a cada uno.
 - Al crear una tarea a mano, la app **sugiere un responsable** según las palabras de la tarea ("diseñar logo" → quien sabe Diseño UX/UI).
 - Siempre que se asigna una tarea a alguien, le llega una alerta, la asigne una persona o el agente.
