@@ -1,7 +1,9 @@
 import { getState, mutateState } from '@/lib/store';
 import { contextFor, viewFor, projectView, addChat } from '@/lib/logic';
 import { getSessionUser, unauthorized } from '@/lib/auth';
-import { claude, hoy, aiConfigured } from '@/lib/claude';
+import Groq from 'groq-sdk';
+import { hoy } from '@/lib/claude';
+import { resolveGroqModel } from '@/lib/groq-analysis';
 import { offlineChat } from '@/lib/offline';
 
 export const dynamic = 'force-dynamic';
@@ -38,16 +40,23 @@ ${contextFor(pv)}`;
       content: m.role === 'user' ? `${nameOf(m.authorId)}: ${m.content}` : m.content,
     }));
     let reply = null, mode = 'ia';
-    if (aiConfigured()) {
+    if (process.env.GROQ_API_KEY) {
       try {
-        reply = await claude({
-          req,
-          system,
-          maxTokens: 700,
-          messages: [...history, { role: 'user', content: `${nameOf(me)}: ${content}` }],
-        });
+        const model = resolveGroqModel(process.env.GROQ_MODEL);
+        const request = {
+          model,
+          messages: [{ role: 'system', content: system }, ...history, { role: 'user', content: `${nameOf(me)}: ${content}` }],
+          max_completion_tokens: 700,
+          temperature: 0.3,
+          stream: false,
+        };
+        if (model.startsWith('openai/gpt-oss')) { request.reasoning_effort = 'low'; request.include_reasoning = false; }
+        const client = new Groq({ apiKey: process.env.GROQ_API_KEY });
+        const completion = await client.chat.completions.create(request, { timeout: 30_000, maxRetries: 0 });
+        const text = completion?.choices?.[0]?.message?.content;
+        if (typeof text === 'string' && text.trim()) reply = text.trim().slice(0, 4000);
       } catch (e) {
-        console.error('[team-lab-chat-provider]', e?.name || 'Error');
+        console.error('[team-lab-chat-provider]', e?.status || e?.name || 'Error');
       }
     }
     if (!reply) { reply = offlineChat(pv, content, me); mode = 'local'; }
