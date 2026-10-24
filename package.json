@@ -9,8 +9,8 @@
     "test": "node --test tests/*.test.mjs"
   },
   "dependencies": {
+    "ai": "^7.0.153",
     "next": "^16.4.3",
-    "openai": "^7.43.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1"
   }

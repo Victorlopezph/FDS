@@ -32,7 +32,9 @@ test('clasifica cuotas, timeout y modelos no disponibles sin exponer mensajes pr
     message: 'El servicio de IA alcanzó su cuota o límite. Probá más tarde o revisá el uso de la cuenta.',
   });
   assert.equal(classifyProviderError({ name: 'APIConnectionTimeoutError', message: 'private text' }).status, 504);
-  assert.match(classifyProviderError({ status: 404, message: 'private text' }).message, /OPENAI_MODEL/);
+  assert.match(classifyProviderError({ statusCode: 404, message: 'private text' }).message, /AI_ANALYSIS_MODEL/);
+  assert.equal(classifyProviderError({ statusCode: 429 }).status, 429);
+  assert.match(classifyProviderError({ statusCode: 403, message: 'AI Gateway requires a valid credit card on file' }).message, /tarjeta/);
   assert.equal(classifyProviderError({ status: 502, message: 'private text' }).status, 503);
 });
 
