@@ -223,3 +223,34 @@ test('serializa mutaciones concurrentes para no perder escrituras en memoria loc
   const state = await getState();
   assert.equal(state.counter, 32);
 });
+
+test('a statement that every task is finished completes all unfinished tasks', () => {
+  const tasks = makeState([
+    { id: 'task-1', title: 'Login' },
+    { id: 'task-2', title: 'Pagos', status: 'curso', progress: 40 },
+    { id: 'task-3', title: 'Diseño', status: 'hecho', progress: 100 },
+  ]).tasks;
+  const text = 'todas las tareas estan terminadas';
+  const accepted = validateProgressDraft({ proposals: [proposal({ proposedStatus: 'hecho', proposedProgress: 100, evidence: text })] }, tasks, text);
+  assert.deepEqual(accepted.map((item) => [item.taskId, item.proposedStatus, item.proposedProgress]), [['task-1', 'hecho', 100], ['task-2', 'hecho', 100]]);
+
+  const state = makeState([{ id: 'task-1', title: 'Login' }, { id: 'task-2', title: 'Pagos' }]);
+  const result = analyze(state, { text, proposals: validateProgressDraft({ proposals: [proposal({ proposedStatus: 'hecho', proposedProgress: 100, evidence: text })] }, state.tasks, text) });
+  assert.equal(result.analysis.afterProgress, 100);
+});
+
+test('global completion is rejected with exceptions, doubts, partial scope or partial percentages', () => {
+  const tasks = makeState([{ id: 'task-1', title: 'Login' }, { id: 'task-2', title: 'Pagos' }]).tasks;
+  for (const text of [
+    'todas las tareas estan terminadas menos pagos',
+    'casi todas las tareas estan terminadas',
+    'creo que todas las tareas estan terminadas',
+    'todas las tareas no estan terminadas',
+    'todas las tareas estan al 80%',
+    'mañana termino todo',
+    'algunas tareas estan terminadas',
+  ]) {
+    const accepted = validateProgressDraft({ proposals: [proposal({ proposedStatus: 'hecho', proposedProgress: 100, evidence: text })] }, tasks, text);
+    assert.deepEqual(accepted, [], text);
+  }
+});
