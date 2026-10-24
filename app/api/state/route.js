@@ -6,7 +6,7 @@ import {
   createTask, updateTask, deleteTask, TASK_STATUS,
 } from '@/lib/logic';
 import { seedDemo } from '@/lib/seed';
-import { cleanSkills } from '@/lib/skills';
+import { cleanSkills, cleanAvailability, scheduleText } from '@/lib/skills';
 
 export const dynamic = 'force-dynamic';
 
@@ -97,6 +97,10 @@ export async function POST(req) {
         if (typeof body.schedule === 'string') m.schedule = body.schedule.trim().slice(0, 80);
         if (typeof body.name === 'string' && body.name.trim()) m.name = body.name.trim().slice(0, 30);
         if (body.skills !== undefined) m.skills = cleanSkills(body.skills);
+        if (body.availability !== undefined) {
+          m.availability = cleanAvailability(body.availability);
+          m.schedule = scheduleText(m.availability);
+        }
       }
       break;
     }
