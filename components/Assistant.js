@@ -98,7 +98,8 @@ export default function ProjectChat({ project, state, me, onState }) {
               <div className={`msg ${m.role === 'user' ? (mine ? 'user' : 'other') : 'assistant'}`}>
                 {m.role === 'user' && !mine && <span className="msg-author">{author?.name || 'Ex integrante'}</span>}
                 {m.tag === 'avance' && <span className="msg-tag">Avance registrado</span>}
-                {m.tag === 'tablero' && <span className="msg-tag">Tablero actualizado</span>}
+                {m.tag === 'tablero' && <span className="msg-tag">Tablero actualizado{m.mode === 'local' ? ' · modo sin IA' : ''}</span>}
+                {m.role === 'assistant' && m.tag !== 'tablero' && m.mode === 'local' && <span className="msg-tag">Modo sin IA</span>}
                 {m.content}
                 <span className="msg-time">{timeAgo(m.createdAt)}</span>
               </div>
