@@ -41,8 +41,8 @@ export default function Login({ google, guest, inviting, onGuest }) {
 
   return (
     <div className="login">
-      <div className="login-mark"><Icon name="spark" size={34} /></div>
-      <h1 style={{ fontSize: 34 }}>Team lab</h1>
+      <img className="login-logo" src="/logo-mark.png" alt="" />
+      <h1 style={{ fontSize: 34 }}>Team <span className="brand-lab">Lab</span></h1>
       <p className="login-sub">Tu equipo organizado por un agente de IA. Contale qué hiciste y él se encarga del resto.</p>
 
       {inviting && <div className="note c-lav">Te invitaron a un proyecto. Iniciá sesión para sumarte.</div>}

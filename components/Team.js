@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { Avatar, Icon, isOnline, timeAgo } from './ui';
 import { SKILLS, ROLES, DAYS, scheduleText } from '@/lib/skills';
+import InviteFriends from './InviteFriends';
 
 // Mi perfil: rol, habilidades y horario, todo con selección (el agente los usa para asignar tareas).
 const HOURS = Array.from({ length: 25 }, (_, h) => h);
@@ -142,18 +143,23 @@ function Profile({ meMember, user, post, onLogout }) {
   );
 }
 
-export default function Team({ state, presence, me, user, post, onLogout }) {
+export default function Team({ state, presence, me, user, post, onLogout, notify }) {
   const meMember = state.members.find((m) => m.id === me);
   const others = state.members.filter((m) => m.id !== me);
 
   return (
     <>
-      <div className="page-head"><h1>Equipo</h1></div>
+      <div className="page-head"><h1>Equipo</h1><InviteFriends notify={notify} compact /></div>
 
       <Profile meMember={meMember} user={user} post={post} onLogout={onLogout} />
 
       <div className="section-title">Mis compañeros <span className="count">{others.length}</span></div>
-      {!others.length && <p className="empty">Todavía no hay nadie. Invitá gente desde un proyecto.</p>}
+      {!others.length && (
+        <div className="card" style={{ textAlign: 'center' }}>
+          <p className="small" style={{ marginBottom: 12 }}>Todavía no hay nadie. Invitá a tus amigos a Team lab y después sumalos a tus proyectos.</p>
+          <InviteFriends notify={notify} />
+        </div>
+      )}
       <div className="list">
         {others.map((m) => {
           const open = state.tasks.filter((t) => t.assignee === m.id && t.status !== 'hecho');
