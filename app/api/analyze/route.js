@@ -1,5 +1,6 @@
-import { generateText, jsonSchema, Output } from 'ai';
+import Groq from 'groq-sdk';
 import { createHash } from 'crypto';
+import { requestGroqAnalysis, resolveGroqModel } from '@/lib/groq-analysis';
 import {
   completeAnalysis, getState, mutateState, reserveAnalysis, failAnalysis, consumeRateLimit,
 } from '@/lib/store';
@@ -13,7 +14,7 @@ export const maxDuration = 60;
 
 const MAX_BODY_BYTES = 24 * 1024;
 const MAX_TEXT_LENGTH = 4000;
-const MODEL = process.env.AI_ANALYSIS_MODEL || 'openai/gpt-6-luna';
+const MODEL = resolveGroqModel(process.env.GROQ_MODEL);
 
 const OUTPUT_SCHEMA = {
   type: 'object',
@@ -131,6 +132,7 @@ export async function POST(request) {
   if (text.length > MAX_TEXT_LENGTH) return errorResponse('El texto es muy largo (máximo 4000 caracteres).', 400);
   if (!projectId || projectId.length > 160) return errorResponse('El proyecto no es válido.', 400);
   if (!/^[\w-]{8,128}$/.test(messageId)) return errorResponse('El identificador del mensaje no es válido.', 400);
+  if (!process.env.GROQ_API_KEY) return errorResponse('La IA no está configurada en el servidor. Configurá GROQ_API_KEY.', 503);
 
   let idempotencyKey = '';
   let reservationOwner = '';
@@ -209,17 +211,13 @@ export async function POST(request) {
 
     let response;
     try {
-      const result = await generateText({
+      const client = new Groq({ apiKey: process.env.GROQ_API_KEY });
+      ({ response } = await requestGroqAnalysis(client, {
         model: MODEL,
         system: INSTRUCTIONS,
-        prompt: JSON.stringify(context),
-        output: Output.object({ schema: jsonSchema(OUTPUT_SCHEMA), name: 'team_lab_progress_analysis' }),
-        maxOutputTokens: 700,
-        maxRetries: 0,
-        timeout: 45_000,
-        providerOptions: { openai: { store: false } },
-      });
-      response = { status: result.finishReason === 'stop' ? 'completed' : 'incomplete', output_text: result.text };
+        input: JSON.stringify(context),
+        schema: OUTPUT_SCHEMA,
+      }));
     } catch (error) {
       await failAnalysis(idempotencyKey, reservationOwner).catch(() => {});
       reservationOwner = '';
