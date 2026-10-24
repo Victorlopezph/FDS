@@ -1,5 +1,5 @@
-import { originOf, readCookie, cookie, makeSession, userIdFromEmail } from '@/lib/auth';
-import { getState, saveState } from '@/lib/store';
+import { authConfigurationReady, originOf, readCookie, cookie, makeSession, userIdFromEmail } from '@/lib/auth';
+import { mutateState } from '@/lib/store';
 import { upsertUser, joinByEmail } from '@/lib/logic';
 
 export const dynamic = 'force-dynamic';
@@ -11,6 +11,7 @@ export async function GET(req) {
   const url = new URL(req.url);
   const code = url.searchParams.get('code');
   const state = url.searchParams.get('state');
+  if (!authConfigurationReady()) return fail('auth_config');
   if (!code || !state || state !== readCookie(req, 'ronda_oauth')) return fail('login');
 
   try {
@@ -35,10 +36,10 @@ export async function GET(req) {
     const email = info.email.toLowerCase();
     const user = { id: userIdFromEmail(email), email, name: info.given_name || info.name || email.split('@')[0], picture: info.picture || null };
 
-    const s = await getState();
-    upsertUser(s, user);
-    joinByEmail(s, user);
-    await saveState(s);
+    await mutateState((current) => {
+      upsertUser(current, user);
+      joinByEmail(current, user);
+    });
 
     const headers = new Headers({ Location: `${origin}/` });
     headers.append('Set-Cookie', cookie('ronda_session', makeSession(user), 30 * 86400));

@@ -167,8 +167,8 @@ export default function Home() {
   if (!user) {
     return (
       <div className="app">
-        <Login google={auth.google} guest={auth.guest} inviting={!!ls.get('ronda-invite')}
-          onGuest={(u) => setAuth((a) => ({ ...a, user: u }))} />
+          <Login inviting={!!ls.get('ronda-invite')}
+            onGuest={(u) => setAuth((a) => ({ ...a, user: u }))} />
         {splashEl}
       </div>
     );

@@ -20,7 +20,7 @@ Pensada para celular, con modo día y modo noche.
 4. **Clave de Claude:** en **Settings → Environment Variables** agreguen `ANTHROPIC_API_KEY` (de console.anthropic.com).
 5. **Redeploy:** en **Deployments**, los tres puntitos del último → **Redeploy**, para que tome las variables nuevas.
 
-Sin Redis la app igual funciona, pero los datos se guardan en memoria y se pierden.
+En desarrollo local sin Redis se usa memoria temporal y se muestra como tal; esos datos se pierden al reiniciar. En producción, si Redis no está conectado o responde con errores, la app falla de forma cerrada y no usa memoria local como si fuera durable.
 
 ## Activar el login con Google (10 minutos)
 
@@ -39,11 +39,11 @@ Hasta que lo configuren, la app funciona con **modo invitado** (se entra solo co
 5. En Vercel, **Settings → Environment Variables**, agreguen:
    - `GOOGLE_CLIENT_ID`
    - `GOOGLE_CLIENT_SECRET`
-   - `AUTH_SECRET`: cualquier texto largo al azar (firma las sesiones).
-   - Opcional: `ALLOW_GUEST=true` si quieren dejar también el modo invitado.
+   - `AUTH_SECRET`: secreto aleatorio independiente de al menos 32 bytes (por ejemplo, generen uno con `openssl rand -base64 32`). No reutilicen credenciales de Google ni de proveedores de IA.
+   - Opcional: `ALLOW_GUEST=false` para desactivar el acceso invitado; por defecto sigue habilitado.
 6. **Redeploy.** Aparece el botón "Continuar con Google".
 
-Importante: usen siempre el dominio de producción (`su-app.vercel.app`). Los links de "preview" de Vercel tienen otra dirección y Google los rechaza.
+`AUTH_SECRET` es obligatorio en producción. Si falta o es demasiado corto, el login falla de forma segura. Cambiarlo invalida inmediatamente todas las sesiones existentes; las personas deberán iniciar sesión de nuevo. Importante: usen siempre el dominio de producción (`su-app.vercel.app`). Los links de "preview" de Vercel tienen otra dirección y Google los rechaza.
 
 ## Proyectos e invitaciones
 
@@ -57,13 +57,16 @@ Importante: usen siempre el dominio de producción (`su-app.vercel.app`). Los li
 - **Tareas a mano:** botón **Nueva tarea** dentro del proyecto. Tocando una tarea se edita o se elimina.
 - **Editar o eliminar el proyecto:** con el lápiz arriba a la derecha (eliminar, solo el creador).
 
-## IA: con clave o sin clave
+## IA: chat y análisis de progreso
 
-- **Sin ninguna clave**, la app funciona en **modo sin IA**: un agente por reglas (`lib/offline.js`) entiende frases como *"terminé el login, me trabé con los pagos, el viernes no puedo venir, hay que hacer el logo"*, actualiza tareas, crea nuevas, asigna por habilidades y avisa al equipo. En el chat aparece la etiqueta "modo sin IA".
-- **Con IA real** (se activa sola al cargar la variable en Vercel y hacer Redeploy):
-  - `ANTHROPIC_API_KEY`: clave de console.anthropic.com, o
-  - `AI_GATEWAY_API_KEY`: clave del AI Gateway de Vercel (o `USE_AI_GATEWAY=true` para usar el token del proyecto). Modelo configurable con `AI_GATEWAY_MODEL`.
-- Si la IA falla, la app vuelve sola al modo sin IA: el chat nunca se queda sin responder.
+- El chat usa `ANTHROPIC_API_KEY` o el AI Gateway (`AI_GATEWAY_API_KEY` / `USE_AI_GATEWAY=true`), con `AI_GATEWAY_MODEL` opcional. Si el proveedor del chat falla, responde el modo local.
+- **Registrar avance** usa **GroqCloud** con el SDK oficial `groq-sdk` (Chat Completions con `response_format: json_schema`). Requiere `GROQ_API_KEY` en el servidor (creala en console.groq.com → API Keys; el plan gratuito alcanza para una demo).
+- `GROQ_MODEL` es opcional. El predeterminado es `openai/gpt-oss-20b`, que la documentación oficial de Groq lista como modelo de producción con salida estructurada en modo estricto (decodificación restringida). También admiten modo estricto `openai/gpt-oss-120b`, `qwen/qwen3.8-27b` y `meta-models/muse-spark-open`.
+- Si configurás un modelo fuera de esa lista, la app usa el modo *best-effort* de Groq. La respuesta se sigue validando campo por campo en el servidor y cualquier desvío se rechaza sin tocar el tablero; si el modelo no admite `json_schema`, Groq devuelve un error que se muestra como "modelo no disponible o no admite este formato".
+- El modelo nunca escribe directamente: toda propuesta pasa por la validación de evidencia, asociación de tarea, versión y confirmación de regresiones. La clave nunca se envía al navegador.
+- Límites actuales: 30 análisis por usuario autenticado y hora, 90 por IP confiable en Vercel y un máximo de 4.000 caracteres por mensaje. No hay reintentos automáticos de la llamada; la reserva distribuida evita solicitudes concurrentes y el resultado idempotente expira en 24 horas. Esto no puede garantizar facturación exactamente una vez: si Groq procesa una llamada pero la conexión o el proceso falla antes de guardar el resultado, un reintento posterior al vencimiento puede volver a consumir cuota. Revisá los límites de tu plan en console.groq.com además del límite de la aplicación.
+- El análisis envía a Groq el proyecto, las tareas y el mensaje actual, no el historial del chat. La retención de datos depende de la política de GroqCloud y de la configuración de tu organización en Groq. El chat conserva como máximo 150 mensajes por proyecto y las auditorías hasta 500 análisis en el estado de la app.
+- El micrófono usa el reconocimiento de voz del navegador. Según navegador y configuración, la transcripción puede depender de servicios externos; la app envía a su servidor sólo el texto transcripto, no un archivo de audio.
 
 ## Habilidades y asignación
 
