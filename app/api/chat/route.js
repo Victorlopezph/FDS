@@ -1,7 +1,8 @@
 import { getState, saveState } from '@/lib/store';
 import { contextFor, viewFor, projectView, addChat } from '@/lib/logic';
 import { getSessionUser, unauthorized } from '@/lib/auth';
-import { claude, hoy } from '@/lib/claude';
+import { claude, hoy, aiConfigured } from '@/lib/claude';
+import { offlineChat } from '@/lib/offline';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -36,17 +37,26 @@ ${contextFor(pv)}`;
       role: m.role,
       content: m.role === 'user' ? `${nameOf(m.authorId)}: ${m.content}` : m.content,
     }));
-    const reply = await claude({
-      system,
-      maxTokens: 700,
-      messages: [...history, { role: 'user', content: `${nameOf(me)}: ${content}` }],
-    });
+    let reply = null, mode = 'ia';
+    if (aiConfigured()) {
+      try {
+        reply = await claude({
+          req,
+          system,
+          maxTokens: 700,
+          messages: [...history, { role: 'user', content: `${nameOf(me)}: ${content}` }],
+        });
+      } catch (e) {
+        console.error('IA no disponible, uso modo sin IA:', e.message);
+      }
+    }
+    if (!reply) { reply = offlineChat(pv, content, me); mode = 'local'; }
 
     const state = await getState();
     addChat(state, projectId, { role: 'user', authorId: me, content });
-    addChat(state, projectId, { role: 'assistant', content: reply });
+    addChat(state, projectId, { role: 'assistant', content: reply, mode });
     await saveState(state);
-    return Response.json({ reply, state: viewFor(state, me) });
+    return Response.json({ reply, mode, state: viewFor(state, me) });
   } catch (e) {
     console.error(e); // aparece en los logs de Vercel
     return Response.json({ error: e.message }, { status: 500 });
