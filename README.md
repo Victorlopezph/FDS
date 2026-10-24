@@ -57,6 +57,14 @@ Importante: usen siempre el dominio de producción (`su-app.vercel.app`). Los li
 - **Tareas a mano:** botón **Nueva tarea** dentro del proyecto. Tocando una tarea se edita o se elimina.
 - **Editar o eliminar el proyecto:** con el lápiz arriba a la derecha (eliminar, solo el creador).
 
+## IA: con clave o sin clave
+
+- **Sin ninguna clave**, la app funciona en **modo sin IA**: un agente por reglas (`lib/offline.js`) entiende frases como *"terminé el login, me trabé con los pagos, el viernes no puedo venir, hay que hacer el logo"*, actualiza tareas, crea nuevas, asigna por habilidades y avisa al equipo. En el chat aparece la etiqueta "modo sin IA".
+- **Con IA real** (se activa sola al cargar la variable en Vercel y hacer Redeploy):
+  - `ANTHROPIC_API_KEY`: clave de console.anthropic.com, o
+  - `AI_GATEWAY_API_KEY`: clave del AI Gateway de Vercel (o `USE_AI_GATEWAY=true` para usar el token del proyecto). Modelo configurable con `AI_GATEWAY_MODEL`.
+- Si la IA falla, la app vuelve sola al modo sin IA: el chat nunca se queda sin responder.
+
 ## Habilidades y asignación
 
 - Cada uno elige sus **habilidades** en **Equipo → Mi perfil** (14 opciones, más las propias que quieran agregar, como "Python" o "Canva").
