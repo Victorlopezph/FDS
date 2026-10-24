@@ -328,3 +328,10 @@ select.field.select-arrow {
 @keyframes float { 50% { transform: translateY(-6px); } }
 @keyframes load { to { width: 100%; } }
 @media (prefers-reduced-motion: reduce) { .splash img, .splash h1, .splash-bar, .splash p, .splash-bar span { animation-duration: .01s; animation-delay: 0s; } }
+
+/* ---------- Páginas legales ---------- */
+.legal { max-width: 680px; margin: 0 auto; padding: 24px 20px 60px; }
+.legal h1 { margin: 12px 0 4px; }
+.legal h2 { margin: 22px 0 6px; font-size: 17px; }
+.legal p { margin-bottom: 10px; color: var(--text); }
+.legal .back { display: inline-block; text-decoration: none; }
