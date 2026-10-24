@@ -8,6 +8,7 @@ import Chats from '@/components/Chats';
 import Login from '@/components/Login';
 import NewProject from '@/components/NewProject';
 import { Icon } from '@/components/ui';
+import Splash from '@/components/Splash';
 
 const TABS = [
   { id: 'proyectos', label: 'Proyectos', icon: 'grid' },
@@ -33,6 +34,8 @@ export default function Home() {
   const [storage, setStorage] = useState('redis');
   const [creating, setCreating] = useState(false);
   const [toast, setToast] = useState('');
+  const [splash, setSplash] = useState('show'); // show -> hiding -> gone
+  const [startedAt] = useState(() => Date.now());
 
   const user = auth?.user;
   const me = user?.id;
@@ -56,6 +59,17 @@ export default function Home() {
   };
 
   const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(''), 3000); };
+
+  // Animación de entrada: se muestra al menos 1,8 s y hasta que cargan los datos
+  const ready = !!auth && (!auth.user || !!state);
+  useEffect(() => {
+    if (!ready || splash !== 'show') return;
+    const wait = Math.max(0, 1800 - (Date.now() - startedAt));
+    const a = setTimeout(() => setSplash('hiding'), wait);
+    const b = setTimeout(() => setSplash('gone'), wait + 500);
+    return () => { clearTimeout(a); clearTimeout(b); };
+  }, [ready]);
+  const splashEl = splash !== 'gone' ? <Splash hide={splash === 'hiding'} /> : null;
 
   const apply = (d) => {
     if (d.state) setState(d.state);
@@ -148,13 +162,14 @@ export default function Home() {
     showToast('Proyecto creado. Ahora sumá a tu equipo.');
   }
 
-  if (!auth) return <div className="app"><main><p className="empty" style={{ marginTop: 40 }}>Cargando…</p></main></div>;
+  if (!auth) return <div className="app">{splashEl}</div>;
 
   if (!user) {
     return (
       <div className="app">
         <Login google={auth.google} guest={auth.guest} inviting={!!ls.get('ronda-invite')}
           onGuest={(u) => setAuth((a) => ({ ...a, user: u }))} />
+        {splashEl}
       </div>
     );
   }
@@ -163,7 +178,7 @@ export default function Home() {
     <div className="app">
       <header className="topbar">
         <div className="logo">
-          <span className="logo-mark"><Icon name="spark" size={18} /></span> Team lab
+          <img className="logo-img" src="/logo-mark.png" alt="" /> Team <span className="brand-lab">Lab</span>
         </div>
         <div className="top-actions">
           <button className="icon-btn" onClick={toggleTheme} aria-label={theme === 'dark' ? 'Modo día' : 'Modo noche'}>
@@ -201,7 +216,7 @@ export default function Home() {
             )}
             {tab === 'equipo' && (
               <>
-                <Team state={state} presence={presence} me={me} user={user} post={post} onLogout={logout} />
+                <Team state={state} presence={presence} me={me} user={user} post={post} onLogout={logout} notify={showToast} />
                 <p style={{ textAlign: 'center', marginTop: 24 }}>
                   <button className="link" onClick={() => confirm('¿Cargar (o reiniciar) los proyectos de ejemplo?') && post({ action: 'loadDemo' })}>
                     Cargar o reiniciar proyectos de ejemplo
@@ -216,6 +231,7 @@ export default function Home() {
 
       {creating && <NewProject onClose={() => setCreating(false)} onCreate={createProject} />}
       {toast && <div className="toast">{toast}</div>}
+      {splashEl}
 
       <nav className="tabbar">
         <div className="tabbar-inner">

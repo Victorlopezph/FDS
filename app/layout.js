@@ -4,6 +4,7 @@ export const metadata = {
   title: 'Team lab',
   description: 'Tu equipo organizado por un agente de IA',
   appleWebApp: { capable: true, title: 'Team lab', statusBarStyle: 'default' },
+  icons: { icon: '/favicon.png', apple: '/apple-icon.png' },
 };
 
 export const viewport = {
@@ -26,7 +27,7 @@ export default function RootLayout({ children }) {
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-        <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
       </head>
       <body>{children}</body>
     </html>

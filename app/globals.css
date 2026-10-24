@@ -24,7 +24,7 @@
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 html, body { background: var(--bg); color: var(--text); }
 body {
-  font-family: 'Nunito', system-ui, -apple-system, sans-serif;
+  font-family: 'Montserrat', system-ui, -apple-system, sans-serif;
   font-size: 15px; line-height: 1.45;
   transition: background .25s, color .25s;
 }
@@ -307,3 +307,24 @@ select.field.select-arrow {
   background: var(--surface-2); color: var(--muted); border: 1.5px solid transparent;
 }
 .day.on { background: var(--lav); color: var(--lav-ink); border-color: var(--lav-ink); }
+
+/* ---------- Logo ---------- */
+.logo-img { height: 28px; width: auto; display: block; }
+.login-logo { width: 150px; height: auto; margin-bottom: 4px; animation: pop .6s cubic-bezier(.2,.9,.3,1.3) both; }
+.brand-lab { background: linear-gradient(90deg, #1E6BFF, #18C3C3, #8B5CF6); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+/* ---------- Pantalla de carga ---------- */
+.splash {
+  position: fixed; inset: 0; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px;
+  background: var(--bg); transition: opacity .45s ease, visibility .45s;
+}
+.splash.hide { opacity: 0; visibility: hidden; }
+.splash img { width: 170px; height: auto; animation: pop .7s cubic-bezier(.2,.9,.3,1.3) both, float 2.4s ease-in-out .7s infinite; }
+.splash h1 { font-size: 30px; animation: up .5s ease .35s both; }
+.splash-bar { width: 180px; height: 6px; border-radius: 3px; background: var(--surface-2); overflow: hidden; animation: up .5s ease .45s both; }
+.splash-bar span { display: block; height: 100%; width: 0; border-radius: 3px; background: linear-gradient(90deg, #1E6BFF, #18C3C3, #8B5CF6); animation: load 1.3s cubic-bezier(.4,0,.2,1) .5s forwards; }
+.splash p { color: var(--muted); font-size: 13px; font-weight: 600; animation: up .5s ease .55s both; }
+@keyframes pop { from { transform: scale(.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+@keyframes float { 50% { transform: translateY(-6px); } }
+@keyframes load { to { width: 100%; } }
+@media (prefers-reduced-motion: reduce) { .splash img, .splash h1, .splash-bar, .splash p, .splash-bar span { animation-duration: .01s; animation-delay: 0s; } }
