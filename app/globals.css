@@ -293,3 +293,17 @@ select.field { appearance: none; -webkit-appearance: none; background-image: non
   display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 12px; margin-bottom: 8px;
   border-radius: 14px; background: var(--surface-2); border: 1.5px dashed var(--lav-ink);
 }
+
+/* ---------- Perfil: desplegables y días ---------- */
+select.field.select-arrow {
+  appearance: none; -webkit-appearance: none; padding-right: 36px;
+  background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+  background-position: calc(100% - 18px) 50%, calc(100% - 13px) 50%;
+  background-size: 5px 5px, 5px 5px; background-repeat: no-repeat;
+}
+.day-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+.day {
+  height: 42px; border-radius: 12px; font-weight: 800; font-size: 13px;
+  background: var(--surface-2); color: var(--muted); border: 1.5px solid transparent;
+}
+.day.on { background: var(--lav); color: var(--lav-ink); border-color: var(--lav-ink); }
