@@ -1,12 +1,10 @@
-import { guestEnabled, cookie, makeSession, randomToken } from '@/lib/auth';
+import { cookie, makeSession, randomToken } from '@/lib/auth';
 import { getState, saveState } from '@/lib/store';
 import { upsertUser } from '@/lib/logic';
 
 export const dynamic = 'force-dynamic';
 
-// Entrar solo con el nombre (respaldo si Google no está configurado).
 export async function POST(req) {
-  if (!guestEnabled()) return Response.json({ error: 'El modo invitado está desactivado.' }, { status: 403 });
   const { name } = await req.json();
   const clean = String(name || '').trim().slice(0, 30);
   if (!clean) return Response.json({ error: 'Escribí tu nombre.' }, { status: 400 });
