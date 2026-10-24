@@ -1,3 +1,4 @@
+import Script from 'next/script';
 import './globals.css';
 
 export const metadata = {
@@ -29,8 +30,8 @@ export default function RootLayout({ children }) {
         <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
       </head>
       <body>
-        {/* Va al inicio del body y no en el head: la vista previa de v0 inyecta su propio script en el head y eso desalinea la hidratación. */}
-        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        {/* next/script con beforeInteractive lo inyecta fuera del árbol de React: corre antes de hidratar y no genera mismatch con los scripts que agrega la vista previa. */}
+        <Script id="theme-init" strategy="beforeInteractive">{themeScript}</Script>
         {children}
       </body>
     </html>
